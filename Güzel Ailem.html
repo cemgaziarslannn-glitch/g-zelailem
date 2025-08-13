@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Güzel Ailem</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #fff0f5; display: flex; flex-direction: column; height: 100vh; margin: 0; padding: 0; }
+    #chatContainer { flex: 1; overflow-y: auto; padding: 10px; border-bottom: 1px solid #ccc; }
+    #messageInput { display: flex; flex-direction: column; }
+    #inputRow { display: flex; }
+    #messageInput input { flex: 1; padding: 10px; font-size: 16px; }
+    #messageInput button { padding: 10px; font-size: 16px; background-color: #ff99cc; border: none; cursor: pointer; }
+    #emojiPicker, #avatarPicker { margin-bottom: 5px; }
+    .emojiBtn, .avatarBtn { font-size: 24px; cursor: pointer; margin: 2px; border: none; background: none; }
+    .message { margin-bottom: 8px; padding: 8px 12px; border-radius: 15px; color: #000; display: block; max-width: 80%; word-wrap: break-word; }
+    .username { font-weight: bold; margin-right: 5px; }
+  </style>
+</head>
+<body>
+  <div id="chatContainer"></div>
+
+  <div id="messageInput">
+    <div id="avatarPicker">
+      Avatar seç: 
+      <button class="avatarBtn">😃</button>
+      <button class="avatarBtn">😎</button>
+      <button class="avatarBtn">😍</button>
+      <button class="avatarBtn">🤗</button>
+    </div>
+    <div id="emojiPicker">
+      Emoji: 
+      <button class="emojiBtn">😀</button>
+      <button class="emojiBtn">😂</button>
+      <button class="emojiBtn">😍</button>
+      <button class="emojiBtn">😎</button>
+      <button class="emojiBtn">🤗</button>
+      <button class="emojiBtn">👍</button>
+      <button class="emojiBtn">🎉</button>
+    </div>
+    <div id="inputRow">
+      <input type="text" id="messageText" placeholder="Mesajını yaz..." />
+      <button id="sendBtn">Gönder</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBX0PUaisTG-TvIOCCtKzSiI3e7yhLu3ik",
+      authDomain: "guzelailemchat.firebaseapp.com",
+      databaseURL: "https://guzelailemchat-default-rtdb.firebaseio.com",
+      projectId: "guzelailemchat",
+      storageBucket: "guzelailemchat.firebasestorage.app",
+      messagingSenderId: "353492004109",
+      appId: "1:353492004109:web:3a668422a563e6951cd444",
+      measurementId: "G-3CH1J0DLGZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Rastgele kullanıcı adı ve renk
+    const username = "Üye" + Math.floor(Math.random() * 1000);
+    const colors = ['#ffb6c1','#ff99cc','#ffc0cb','#ff66b2','#ff3399','#ff0066'];
+    const userColor = colors[Math.floor(Math.random() * colors.length)];
+    let userAvatar = "😃";
+
+    const chatContainer = document.getElementById('chatContainer');
+    const messageInput = document.getElementById('messageText');
+    const sendBtn = document.getElementById('sendBtn');
+    const emojiButtons = document.querySelectorAll('.emojiBtn');
+    const avatarButtons = document.querySelectorAll('.avatarBtn');
+
+    // Emoji ekleme
+    emojiButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        messageInput.value += btn.textContent;
+        messageInput.focus();
+      });
+    });
+
+    // Avatar seçme
+    avatarButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        userAvatar = btn.textContent;
+      });
+    });
+
+    // Mesajları render etme
+    function renderMessage(msg) {
+      const div = document.createElement('div');
+      div.classList.add('message');
+      div.style.backgroundColor = msg.color;
+      div.innerHTML = `${msg.avatar} <span class="username">${msg.user}:</span> ${msg.text}`;
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // Mesaj gönderme
+    sendBtn.addEventListener('click', () => {
+      const text = messageInput.value.trim();
+      if(text) {
+        push(ref(db, 'messages'), { user: username, text, color: userColor, avatar: userAvatar });
+        messageInput.value = '';
+      }
+    });
+
+    messageInput.addEventListener('keypress', (e) => {
+      if(e.key === 'Enter') sendBtn.click();
+    });
+
+    // Gerçek zamanlı mesaj dinleme
+    onChildAdded(ref(db, 'messages'), (snapshot) => {
+      const msg = snapshot.val();
+      renderMessage(msg);
+    });
+  </script>
+</body>
+</html>
